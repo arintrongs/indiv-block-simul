@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
+    "serve": "cross-env NODE_ENV=development vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "cross-env": "^5.2.0",
+    "global": "^4.3.2",
+    "lodash": "^4.17.11",
     "vue": "^2.5.17"
   },
   "devDependencies": {
