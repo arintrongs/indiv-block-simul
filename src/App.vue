@@ -79,6 +79,14 @@ export default {
       const peer_b_idx = this.peers.findIndex(obj => obj.id === peer_b_id)
       this.peers[peer_a_idx].connected = _.filter(this.peers[peer_a_idx].connected, n => n !== peer_b_id)
       this.peers[peer_b_idx].connected = _.filter(this.peers[peer_b_idx].connected, n => n !== peer_a_id)
+      if (this.peers[peer_a_idx].connected.length === 0) this.p[peer_a_id] = peer_a_id
+      else {
+        this.p[peer_a_id] = p[this.peers[peer_a_idx].connected[0]]
+      }
+      if (this.peers[peer_b_idx].connected.length === 0) this.p[peer_b_id] = peer_b_id
+      else {
+        this.p[peer_b_id] = p[this.peers[peer_b_idx].connected[0]]
+      }
     },
     connect: function(peer_a_id, peer_b_id) {
       // TODOS : Change to Union Find
