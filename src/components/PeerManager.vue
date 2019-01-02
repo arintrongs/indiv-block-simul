@@ -1,5 +1,6 @@
 <template>
   <div class="peer-manager">
+    <v-alert :value="alert" type="success" transition="scale-transition">This is a success alert.</v-alert>
     <v-card width="100%" height="700">
       <v-card-title class="card-title">
         <span class="title">Peer Manager</span>
@@ -11,8 +12,13 @@
             <v-avatar>
               <v-icon :color="peer.color">account_circle</v-icon>
             </v-avatar>
-            Peer {{peer.id}}
+            Peer {{peer.id}} (Group : {{peer.group}})
           </v-chip>
+        </div>
+        <v-divider/>
+        <div class="item">
+          <span class="topic">Usable/Balance :</span>
+          {{(group_stake[peer.group]/total_peer)*peer.balance}}/{{peer.balance}}
         </div>
         <v-divider/>
         <div class="item">
@@ -53,9 +59,16 @@
         </div>
         <v-divider/>
         <div class="item-block">
-          <div>
+          <div class="block-panel">
             <span class="topic">Blocks :</span>
-            <v-btn small dark depressed :color="peer.color" v-on:click="addblock(peer.id)">Add Block</v-btn>
+            <v-text-field placeholder="Input money" v-model="peer.input" :change="store_money()"/>
+            <v-btn
+              small
+              dark
+              depressed
+              :color="peer.color"
+              v-on:click="addblock(peer.id,this.input)"
+            >Add Block</v-btn>
           </div>
           <div class="blocks">
             <div
@@ -83,10 +96,12 @@ export default {
     peers: Array,
     connect: Function,
     removeedge: Function,
-    addblock: Function
+    addblock: Function,
+    group_stake: Array,
+    total_peer: Number
   },
   data() {
-    return { selected: null }
+    return { selected: null, alert: false }
   },
   computed: {
     items: function() {
@@ -100,6 +115,10 @@ export default {
     peercolor: function(peer_id) {
       const peer_idx = this.peers.findIndex(obj => obj.id === peer_id)
       return this.peers[peer_idx].color || 'black'
+    },
+    store_money: function() {
+      const input = this.peer.input || 0
+      this.peer.input = parseInt(input)
     }
   }
 }
@@ -108,22 +127,6 @@ export default {
 .peer-manager {
   width: 950px;
   text-align: center;
-}
-.card-title {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 10px 8px 20px;
-  background-color: #eaeaea;
-  height: 68px;
-}
-.title {
-  font-size: 16px;
-}
-.card-content {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 0px 20px 15px 20px;
 }
 .item {
   display: flex;
@@ -170,5 +173,11 @@ export default {
   margin-right: 5px;
   margin-bottom: 10px;
   padding: 10px 5px 5px 5px;
+}
+.block-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 400px;
 }
 </style>

@@ -51,15 +51,7 @@ export default {
   height: 620px;
   overflow-y: scroll;
 }
-.card-title {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 10px 8px 20px;
-  background-color: #eaeaea;
-}
-.title {
-  font-size: 16px;
-}
+
 </style>
 
 

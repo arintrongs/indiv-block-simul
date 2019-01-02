@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-    <h1></h1>
     <PeerList
       :peers="peers"
       :addpeer="addpeer"
@@ -13,7 +12,10 @@
       :connect="connect"
       :removeedge="removeedge"
       :addblock="addblock"
+      :group_stake="group_stake"
+      :total_peer="total_peer"
     />
+    <GraphContainer :peers="peers"/>
   </div>
 </template>
 
@@ -22,12 +24,14 @@ import Vue from 'vue'
 import _ from 'lodash'
 import PeerList from './components/PeerList.vue'
 import PeerManager from './components/PeerManager.vue'
+import GraphContainer from './components/GraphContainer.vue'
 
 export default {
   name: 'app',
   components: {
     PeerList,
-    PeerManager
+    PeerManager,
+    GraphContainer
   },
   data() {
     return {
@@ -37,13 +41,17 @@ export default {
           connected: [],
           blocks: [],
           selected: null,
-          color: '#3e3e3e'
+          color: '#3e3e3e',
+          balance: 100,
+          input: 0,
+          group: 0
         }
       ],
       height: 0,
       selected_idx: 0,
       total_peer: 1,
-      p: [0]
+      p: [0],
+      group_stake: [1]
     }
   },
   methods: {
@@ -55,11 +63,14 @@ export default {
         connected: [],
         blocks: [],
         selected: null,
-        color: cssHSL
+        color: cssHSL,
+        balance: 100,
+        input: 0
       }
       this.peers.push(peer)
       this.p.push(peer.id)
       this.total_peer += 1
+      this.calcgroup()
     },
     removepeer: function(peer_id) {
       // Remove from all neighbor
@@ -71,7 +82,10 @@ export default {
       }
 
       // Remove itself
+      this.total_peer-=1
       this.$delete(this.peers, peer_idx)
+      this.calcgroup()
+
     },
     removeedge: function(peer_a_id, peer_b_id) {
       if (peer_a_id === null || peer_b_id === null) return
@@ -87,6 +101,7 @@ export default {
       else {
         this.p[peer_b_id] = p[this.peers[peer_b_idx].connected[0]]
       }
+      this.calcgroup()
     },
     connect: function(peer_a_id, peer_b_id) {
       // TODOS : Change to Union Find
@@ -114,10 +129,14 @@ export default {
             }
             visited[peer_idx] = 1
           }
+          this.calcgroup()
         }
       }
     },
-    addblock: function(peer_id) {
+    addblock: function(peer_id, input) {
+      // Check whether the input is valid according to the current stake
+      // if()
+      // Add Block
       const visited = _.fill(Array(this.peers.length), 0)
       const peer_idx = this.peers.findIndex(obj => obj.id === peer_id)
       const block = { blockid: this.height, owner: peer_id, color: this.peers[peer_idx].color }
@@ -142,6 +161,30 @@ export default {
     kodpor(peer_id) {
       if (this.p[peer_id] !== peer_id) return (this.p[peer_id] = this.kodpor(this.p[peer_id]))
       return this.p[peer_id]
+    },
+    calcgroup() {
+      var group_num = 0
+      const visited = _.fill(Array(this.peers.length), 0)
+      const group_stake = _.fill(Array(this.peers.length), 0)
+      for (var peer of this.peers) {
+        const peer_idx = this.peers.findIndex(obj => obj.id === peer.id)
+        if (visited[peer_idx] !== 0) continue
+        var stack = []
+        stack.push({ current: peer.id, before: peer.id })
+        while (stack.length !== 0) {
+          var top = stack.pop()
+          const peer_idx = this.peers.findIndex(obj => obj.id === top.current)
+          if (visited[peer_idx] !== 0) continue
+          this.peers[peer_idx].group = group_num
+          group_stake[group_num] += 1
+          for (let neighbor_id of this.peers[peer_idx].connected) {
+            if (neighbor_id != top.before) stack.push({ current: neighbor_id, before: top.current })
+          }
+          visited[peer_idx] = 1
+        }
+        group_num += 1
+      }
+      this.group_stake = group_stake
     }
   }
 }
@@ -157,5 +200,21 @@ export default {
   margin-top: 60px;
   display: flex;
   flex-wrap: wrap;
+}
+.card-title {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px 8px 20px;
+  background-color: #eaeaea;
+  min-height: 68px;
+}
+.card-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0px 20px 15px 20px;
+}
+.title {
+  font-size: 16px;
 }
 </style>
