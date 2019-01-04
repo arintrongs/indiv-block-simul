@@ -60,15 +60,15 @@
         <v-divider/>
         <div class="item-block">
           <div class="block-panel">
-            <span class="topic">Blocks :</span>
+            <span class="topic">Spend :</span>
             <v-text-field placeholder="Input money" v-model="peer.input" :change="store_money()"/>
             <v-btn
               small
               dark
               depressed
               :color="peer.color"
-              v-on:click="addblock(peer.id,this.input)"
-            >Add Block</v-btn>
+              v-on:click="addblock(peer.id,peer.input)"
+            >Spend</v-btn>
           </div>
           <div class="blocks">
             <div
@@ -78,8 +78,10 @@
               :style="{'border-color' : block.color}"
             >
               BlockID : {{block.blockid}}
-              <br>
+              <br/>
               Owner : Peer {{block.owner}}
+              <br/>
+              Value : {{block.value}}
             </div>
           </div>
         </div>
@@ -168,7 +170,7 @@ export default {
 }
 .block {
   width: 120px;
-  height: 60px;
+  height: 80px;
   border: solid;
   margin-right: 5px;
   margin-bottom: 10px;

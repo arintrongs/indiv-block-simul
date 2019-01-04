@@ -1,22 +1,26 @@
 <template>
-  <div id="app">
-    <PeerList
-      :peers="peers"
-      :addpeer="addpeer"
-      :removepeer="removepeer"
-      :onselectpeer="onselectpeer"
-    />
-    <PeerManager
-      :peer="peers[selected_idx]"
-      :peers="peers"
-      :connect="connect"
-      :removeedge="removeedge"
-      :addblock="addblock"
-      :group_stake="group_stake"
-      :total_peer="total_peer"
-    />
-    <GraphContainer :peers="peers"/>
-  </div>
+  <v-app class="overall">
+    <v-alert :value="alert" type="error" transition="scale-transition">Something went wrong.</v-alert>
+    <div class="app">
+      <PeerList
+        :peers="peers"
+        :addpeer="addpeer"
+        :removepeer="removepeer"
+        :onselectpeer="onselectpeer"
+      />
+      <PeerManager
+        :peer="peers[selected_idx]"
+        :peers="peers"
+        :connect="connect"
+        :removeedge="removeedge"
+        :addblock="addblock"
+        :group_stake="group_stake"
+        :total_peer="total_peer"
+        :alert="alert"
+      />
+      <GraphContainer :peers="peers"/>
+    </div>
+  </v-app>
 </template>
 
 <script>
@@ -51,7 +55,8 @@ export default {
       selected_idx: 0,
       total_peer: 1,
       p: [0],
-      group_stake: [1]
+      group_stake: [1],
+      alert: false
     }
   },
   methods: {
@@ -82,10 +87,9 @@ export default {
       }
 
       // Remove itself
-      this.total_peer-=1
+      this.total_peer -= 1
       this.$delete(this.peers, peer_idx)
       this.calcgroup()
-
     },
     removeedge: function(peer_a_id, peer_b_id) {
       if (peer_a_id === null || peer_b_id === null) return
@@ -135,11 +139,19 @@ export default {
     },
     addblock: function(peer_id, input) {
       // Check whether the input is valid according to the current stake
-      // if()
+      const peer = this.peers[this.getpeeridx(peer_id)]
+      if (input > (this.group_stake[peer.group] / this.total_peer) * peer.balance || input <= 0) {
+        // console.log('not enough money!')
+        this.alert = true
+        setTimeout(() => {
+          this.alert = false
+        }, 1000)
+        return null
+      }
       // Add Block
       const visited = _.fill(Array(this.peers.length), 0)
       const peer_idx = this.peers.findIndex(obj => obj.id === peer_id)
-      const block = { blockid: this.height, owner: peer_id, color: this.peers[peer_idx].color }
+      const block = { blockid: this.height, owner: peer_id, color: this.peers[peer_idx].color, value: input }
       var stack = []
       stack.push({ current: peer_id, before: peer_id })
       while (stack.length !== 0) {
@@ -153,6 +165,7 @@ export default {
         visited[peer_idx] = 1
       }
       this.height += 1
+      peer.balance -= input
     },
     onselectpeer: function(peer_id) {
       const peer_idx = this.peers.findIndex(obj => obj.id === peer_id)
@@ -185,21 +198,29 @@ export default {
         group_num += 1
       }
       this.group_stake = group_stake
+    },
+    getpeeridx(peer_id) {
+      return this.peers.findIndex(obj => obj.id === peer_id)
     }
   }
 }
 </script>
 
 <style>
-#app {
+.overall{
+  padding-top:15px;
+}
+.app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   justify-content: space-around;
   color: #2c3e50;
-  margin-top: 60px;
+  padding-top: 80px;
   display: flex;
   flex-wrap: wrap;
+  position: absolute;
+  width: 100%;
 }
 .card-title {
   display: flex;
