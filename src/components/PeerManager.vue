@@ -42,7 +42,7 @@
         </div>
         <v-divider/>
         <div class="item">
-          <span class="topic">Connected To :</span>
+          <span class="topic">Connected To (Directly):</span>
           <div class="neighbor-chips">
             <v-chip
               close
@@ -58,16 +58,38 @@
           </div>
         </div>
         <v-divider/>
+        <div class="item">
+          <span class="topic">Connected To (Indirect) :</span>
+          <div class="neighbor-chips">
+            <v-chip v-for="(neighbor_id,idx) in indirect_connected" :key="idx">
+              <v-avatar>
+                <v-icon :color="peercolor(neighbor_id)">account_circle</v-icon>
+              </v-avatar>
+              Peer {{neighbor_id}}
+            </v-chip>
+          </div>
+        </div>
+        <v-divider/>
         <div class="item-block">
           <div class="block-panel">
             <span class="topic">Spend :</span>
             <v-text-field placeholder="Input money" v-model="peer.input" :change="store_money()"/>
+            <span class="to">To</span>
+            <div class="select">
+              <v-select
+                v-model="to_peer_id"
+                :items="items"
+                item-text="text"
+                item-value="value"
+                label="Peer"
+              ></v-select>
+            </div>
             <v-btn
               small
               dark
               depressed
               :color="peer.color"
-              v-on:click="addblock(peer.id,peer.input)"
+              v-on:click="addblock(peer.id,peer.input,to_peer_id)"
             >Spend</v-btn>
           </div>
           <div class="blocks">
@@ -78,9 +100,9 @@
               :style="{'border-color' : block.color}"
             >
               BlockID : {{block.blockid}}
-              <br/>
+              <br>
               Owner : Peer {{block.owner}}
-              <br/>
+              <br>
               Value : {{block.value}}
             </div>
           </div>
@@ -103,7 +125,7 @@ export default {
     total_peer: Number
   },
   data() {
-    return { selected: null, alert: false }
+    return { selected: null, alert: false, to_peer_id: 0 }
   },
   computed: {
     items: function() {
@@ -111,6 +133,17 @@ export default {
         .filter(peer => peer.id !== this.peer.id)
         .map(peer => ({ text: `Peer ${peer.id}`, value: peer.id }))
       return filtered
+    },
+    indirect_connected: function() {
+      const peers = this.peers.filter(peer => {
+        const isSameGroup = peer.group === this.peer.group
+        let isDirected = false
+        for (const peer_id of this.peer.connected) {
+          if (peer_id == peer.id) isDirected = true
+        }
+        return isSameGroup && !isDirected && peer.id !== this.peer.id
+      })
+      return peers.map(peer => peer.id)
     }
   },
   methods: {
@@ -143,6 +176,7 @@ export default {
   font-size: 16px;
   font-weight: 600;
   margin-right: 20px;
+  width: 130px;
 }
 .select {
   width: 350px;
@@ -180,6 +214,10 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  width: 400px;
+  width: 600px;
+}
+.to {
+  margin-left: 10px;
+  margin-right: 20px;
 }
 </style>

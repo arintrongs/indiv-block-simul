@@ -8,7 +8,13 @@
         </v-btn>
       </v-card-title>
       <v-list class="peer-list" id="peer-list">
-        <v-list-tile v-for="peer in peers" :key="peer.id" avatar @click="onselectpeer(peer.id)">
+        <v-list-tile
+          v-for="peer in peers"
+          :key="peer.id"
+          avatar
+          @click="onselectpeer(peer.id)"
+          v-bind:class="{selected : peer.id === selected_id}"
+        >
           <v-list-tile-avatar>
             <v-icon :color="peer.color">account_circle</v-icon>
           </v-list-tile-avatar>
@@ -30,7 +36,8 @@ export default {
     peers: Array,
     addpeer: Function,
     removepeer: Function,
-    onselectpeer: Function
+    onselectpeer: Function,
+    selected_id: Number
   },
   updated() {
     var container = this.$el.querySelector('#peer-list')
@@ -51,7 +58,9 @@ export default {
   height: 620px;
   overflow-y: scroll;
 }
-
+.selected {
+  background: rgba(0, 0, 0, 0.04);
+}
 </style>
 
 

@@ -7,6 +7,7 @@
         :addpeer="addpeer"
         :removepeer="removepeer"
         :onselectpeer="onselectpeer"
+        :selected_id="selected_id"
       />
       <PeerManager
         :peer="peers[selected_idx]"
@@ -53,7 +54,9 @@ export default {
       ],
       height: 0,
       selected_idx: 0,
+      selected_id: 0,
       total_peer: 1,
+      current_peer_id: 1,
       p: [0],
       group_stake: [1],
       alert: false
@@ -64,7 +67,7 @@ export default {
       const cssHSL =
         'hsl(' + 360 * Math.random() + ',' + (55 + 30 * Math.random()) + '%,' + (75 + 10 * Math.random()) + '%)'
       const peer = {
-        id: this.total_peer,
+        id: this.current_peer_id,
         connected: [],
         blocks: [],
         selected: null,
@@ -75,6 +78,7 @@ export default {
       this.peers.push(peer)
       this.p.push(peer.id)
       this.total_peer += 1
+      this.current_peer_id += 1
       this.calcgroup()
     },
     removepeer: function(peer_id) {
@@ -137,9 +141,10 @@ export default {
         }
       }
     },
-    addblock: function(peer_id, input) {
+    addblock: function(peer_id, input, to_peer_id) {
       // Check whether the input is valid according to the current stake
       const peer = this.peers[this.getpeeridx(peer_id)]
+      const to_peer = this.peers[this.getpeeridx(to_peer_id)]
       if (input > (this.group_stake[peer.group] / this.total_peer) * peer.balance || input <= 0) {
         // console.log('not enough money!')
         this.alert = true
@@ -166,10 +171,12 @@ export default {
       }
       this.height += 1
       peer.balance -= input
+      to_peer.balance += input
     },
     onselectpeer: function(peer_id) {
       const peer_idx = this.peers.findIndex(obj => obj.id === peer_id)
       this.selected_idx = peer_idx
+      this.selected_id = peer_id
     },
     kodpor(peer_id) {
       if (this.p[peer_id] !== peer_id) return (this.p[peer_id] = this.kodpor(this.p[peer_id]))
@@ -207,8 +214,8 @@ export default {
 </script>
 
 <style>
-.overall{
-  padding-top:15px;
+.overall {
+  padding-top: 15px;
 }
 .app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
