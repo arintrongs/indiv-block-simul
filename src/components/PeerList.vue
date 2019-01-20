@@ -61,6 +61,10 @@ export default {
 .selected {
   background: rgba(0, 0, 0, 0.04);
 }
+.v-list__tile__action {
+  min-width: auto;
+  height: auto;
+}
 </style>
 
 

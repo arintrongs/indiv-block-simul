@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <v-card width="80%" height="600">
+    <v-card width="80%" height="auto">
       <v-card-title class="card-title">
         <span class="title">Graph Viewer</span>
       </v-card-title>
@@ -41,7 +41,7 @@ export default {
     links() {
       let links = []
       for (let peer of this.peers) {
-        links = links.concat(peer.connected.map(nodeid => ({ sid: peer.id, tid: nodeid})))
+        links = links.concat(peer.connected.map(nodeid => ({ sid: peer.id, tid: nodeid })))
       }
       return links
     }
@@ -63,6 +63,6 @@ export default {
   font-size: 0.8em;
 }
 .link {
-  stroke: #5a5a5a; 
+  stroke: #5a5a5a;
 }
 </style>

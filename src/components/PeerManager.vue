@@ -1,7 +1,7 @@
 <template>
   <div class="peer-manager">
     <v-alert :value="alert" type="success" transition="scale-transition">This is a success alert.</v-alert>
-    <v-card width="100%" height="700">
+    <v-card width="100%" height="auto">
       <v-card-title class="card-title">
         <span class="title">Peer Manager</span>
       </v-card-title>
@@ -14,11 +14,6 @@
             </v-avatar>
             Peer {{peer.id}} (Group : {{peer.group}})
           </v-chip>
-        </div>
-        <v-divider/>
-        <div class="item">
-          <span class="topic">Usable/Balance :</span>
-          {{(group_stake[peer.group]/total_peer)*peer.balance}}/{{peer.balance}}
         </div>
         <v-divider/>
         <div class="item">
@@ -70,6 +65,12 @@
           </div>
         </div>
         <v-divider/>
+        <div class="item">
+          <span class="topic">Usable/Balance :</span>
+          {{peer.usable}}/{{peer.balance}}
+        </div>
+        <v-divider/>
+
         <div class="item-block">
           <div class="block-panel">
             <span class="topic">Spend :</span>
@@ -101,7 +102,9 @@
             >
               BlockID : {{block.blockid}}
               <br>
-              Owner : Peer {{block.owner}}
+              From : Peer {{block.from}}
+              <br>
+              To : Peer {{block.to}}
               <br>
               Value : {{block.value}}
             </div>
@@ -204,7 +207,7 @@ export default {
 }
 .block {
   width: 120px;
-  height: 80px;
+  height: auto;
   border: solid;
   margin-right: 5px;
   margin-bottom: 10px;

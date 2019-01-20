@@ -25,7 +25,6 @@
 </template>
 
 <script>
-import Vue from 'vue'
 import _ from 'lodash'
 import PeerList from './components/PeerList.vue'
 import PeerManager from './components/PeerManager.vue'
@@ -48,6 +47,7 @@ export default {
           selected: null,
           color: '#3e3e3e',
           balance: 100,
+          usable: 100,
           input: 0,
           group: 0
         }
@@ -59,7 +59,8 @@ export default {
       current_peer_id: 1,
       p: [0],
       group_stake: [1],
-      alert: false
+      alert: false,
+      to_add_later: []
     }
   },
   methods: {
@@ -73,6 +74,7 @@ export default {
         selected: null,
         color: cssHSL,
         balance: 100,
+        usable: 100,
         input: 0
       }
       this.peers.push(peer)
@@ -80,6 +82,7 @@ export default {
       this.total_peer += 1
       this.current_peer_id += 1
       this.calcgroup()
+      this.calcusable()
     },
     removepeer: function(peer_id) {
       // Remove from all neighbor
@@ -94,6 +97,7 @@ export default {
       this.total_peer -= 1
       this.$delete(this.peers, peer_idx)
       this.calcgroup()
+      this.calcusable()
     },
     removeedge: function(peer_a_id, peer_b_id) {
       if (peer_a_id === null || peer_b_id === null) return
@@ -101,28 +105,29 @@ export default {
       const peer_b_idx = this.peers.findIndex(obj => obj.id === peer_b_id)
       this.peers[peer_a_idx].connected = _.filter(this.peers[peer_a_idx].connected, n => n !== peer_b_id)
       this.peers[peer_b_idx].connected = _.filter(this.peers[peer_b_idx].connected, n => n !== peer_a_id)
-      if (this.peers[peer_a_idx].connected.length === 0) this.p[peer_a_id] = peer_a_id
+      if (this.peers[peer_a_idx].connected.length === 0) this.p[peer_a_idx] = peer_a_idx
       else {
-        this.p[peer_a_id] = p[this.peers[peer_a_idx].connected[0]]
+        this.p[peer_a_idx] = this.p[this.peers[peer_a_idx].connected[0]]
       }
-      if (this.peers[peer_b_idx].connected.length === 0) this.p[peer_b_id] = peer_b_id
+      if (this.peers[peer_b_idx].connected.length === 0) this.p[peer_b_idx] = peer_b_idx
       else {
-        this.p[peer_b_id] = p[this.peers[peer_b_idx].connected[0]]
+        this.p[peer_b_idx] = this.p[this.peers[peer_b_idx].connected[0]]
       }
       this.calcgroup()
+      this.calcusable()
     },
     connect: function(peer_a_id, peer_b_id) {
       // TODOS : Change to Union Find
       if (peer_a_id === null || peer_b_id === null) return
-      const peer_a_idx = this.peers.findIndex(obj => obj.id === peer_a_id)
-      const peer_b_idx = this.peers.findIndex(obj => obj.id === peer_b_id)
+      const peer_a_idx = this.getpeeridx(peer_a_id)
+      const peer_b_idx = this.getpeeridx(peer_b_id)
       const isAinB = this.peers[peer_b_idx].connected.filter(id => id === peer_a_id).length !== 0
       const isBinA = this.peers[peer_a_idx].connected.filter(id => id === peer_b_id).length !== 0
       if (!isAinB && !isBinA) {
         this.peers[peer_a_idx].connected.push(peer_b_id)
         this.peers[peer_b_idx].connected.push(peer_a_id)
         const combined_blocks = _.union(this.peers[peer_b_idx].blocks, this.peers[peer_a_idx].blocks)
-        if (this.kodpor(peer_a_id) !== this.kodpor(peer_b_id)) {
+        if (this.kodpor(peer_a_idx) !== this.kodpor(peer_b_idx)) {
           this.p[peer_a_idx] = this.kodpor(this.p[peer_b_idx])
           const visited = _.fill(Array(this.peers.length), 0)
           var stack = []
@@ -137,15 +142,16 @@ export default {
             }
             visited[peer_idx] = 1
           }
-          this.calcgroup()
         }
+        this.calcgroup()
+        this.clearbalance()
       }
     },
     addblock: function(peer_id, input, to_peer_id) {
       // Check whether the input is valid according to the current stake
       const peer = this.peers[this.getpeeridx(peer_id)]
       const to_peer = this.peers[this.getpeeridx(to_peer_id)]
-      if (input > (this.group_stake[peer.group] / this.total_peer) * peer.balance || input <= 0) {
+      if (input > peer.usable || input <= 0) {
         // console.log('not enough money!')
         this.alert = true
         setTimeout(() => {
@@ -156,7 +162,13 @@ export default {
       // Add Block
       const visited = _.fill(Array(this.peers.length), 0)
       const peer_idx = this.peers.findIndex(obj => obj.id === peer_id)
-      const block = { blockid: this.height, owner: peer_id, color: this.peers[peer_idx].color, value: input }
+      const block = {
+        blockid: this.height,
+        from: peer_id,
+        to: to_peer_id,
+        color: this.peers[peer_idx].color,
+        value: input
+      }
       var stack = []
       stack.push({ current: peer_id, before: peer_id })
       while (stack.length !== 0) {
@@ -171,29 +183,35 @@ export default {
       }
       this.height += 1
       peer.balance -= input
-      to_peer.balance += input
+      peer.usable -= input
+      if (peer.group === to_peer.group) {
+        to_peer.balance += input
+        to_peer.usable += input
+      } else {
+        this.to_add_later.push({ from: peer_id, to: to_peer_id, value: input })
+      }
     },
     onselectpeer: function(peer_id) {
-      const peer_idx = this.peers.findIndex(obj => obj.id === peer_id)
+      const peer_idx = this.getpeeridx(peer_id)
       this.selected_idx = peer_idx
       this.selected_id = peer_id
     },
-    kodpor(peer_id) {
-      if (this.p[peer_id] !== peer_id) return (this.p[peer_id] = this.kodpor(this.p[peer_id]))
-      return this.p[peer_id]
+    kodpor(peer_idx) {
+      if (this.p[peer_idx] !== peer_idx) return (this.p[peer_idx] = this.kodpor(this.p[peer_idx]))
+      return this.p[peer_idx]
     },
     calcgroup() {
       var group_num = 0
       const visited = _.fill(Array(this.peers.length), 0)
       const group_stake = _.fill(Array(this.peers.length), 0)
       for (var peer of this.peers) {
-        const peer_idx = this.peers.findIndex(obj => obj.id === peer.id)
+        let peer_idx = this.getpeeridx(peer.id)
         if (visited[peer_idx] !== 0) continue
         var stack = []
         stack.push({ current: peer.id, before: peer.id })
         while (stack.length !== 0) {
           var top = stack.pop()
-          const peer_idx = this.peers.findIndex(obj => obj.id === top.current)
+          let peer_idx = this.getpeeridx(top.current)
           if (visited[peer_idx] !== 0) continue
           this.peers[peer_idx].group = group_num
           group_stake[group_num] += 1
@@ -208,6 +226,26 @@ export default {
     },
     getpeeridx(peer_id) {
       return this.peers.findIndex(obj => obj.id === peer_id)
+    },
+    calcusable() {
+      this.peers = this.peers.map(peer => ({
+        ...peer,
+        usable: (this.group_stake[peer.group] / this.total_peer) * peer.balance
+      }))
+    },
+    clearbalance() {
+      const temp = []
+      for (const trans of this.to_add_later) {
+        const peer = this.peers[this.getpeeridx(trans.from)]
+        const to_peer = this.peers[this.getpeeridx(trans.to)]
+        if (peer.group !== to_peer.group) {
+          temp.push(trans)
+        } else {
+          to_peer.balance += trans.value
+        }
+      }
+      this.to_add_later = temp
+      this.calcusable()
     }
   }
 }
