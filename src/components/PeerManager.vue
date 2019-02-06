@@ -116,6 +116,7 @@
   </div>
 </template>
 <script>
+import _ from 'lodash'
 export default {
   name: 'PeerManager',
   props: {
@@ -133,7 +134,7 @@ export default {
   computed: {
     items: function() {
       const filtered = this.peers
-        .filter(peer => peer.id !== this.peer.id)
+        .filter(peer => peer.id !== this.peer.id && _.findIndex(this.peer.connected, id => id === peer.id) == -1)
         .map(peer => ({ text: `Peer ${peer.id}`, value: peer.id }))
       return filtered
     },
